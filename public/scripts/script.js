@@ -1,4 +1,11 @@
+var socket = io.connect()
+
 $(document).ready(function(){
+
+    socket.on('message', function(message) {
+        console.log('message', message)
+        handleMouseEvent( message.left, message.top )
+    })
 
     var target = $('<span>').addClass('target actor'),
         player = $('<span>').addClass('player actor')
@@ -21,7 +28,36 @@ $(document).ready(function(){
                 top: event.pageY - scaled / 2, // center on mouse
                 left: event.pageX - scaled / 2
             })
+
+            socket.emit('message', {
+                top: parseInt( player.css('top') ),
+                left: parseInt( player.css('left') )
+            })
         });
+
+    function handleMouseEvent ( mouseEvent ) {
+        return handlePositionChange( event.pageX, event.pageY )
+    }
+
+    function handlePositionChange ( x, y ) {
+
+        var d = elementDistance( target, player ),
+            scaled = scale( d )
+
+        player.css({
+            width: scaled,
+            height: scaled,
+            'border-radius': scaled,
+
+            top: event.pageY - scaled / 2, // center on mouse
+            left: event.pageX - scaled / 2
+        })
+
+        socket.emit('message', {
+            top: parseInt( player.css('top') ),
+            left: parseInt( player.css('left') )
+        })
+    }
 
     function elementDistance ( elem1, elem2 ) {
         var px = elem1.css('top'),
