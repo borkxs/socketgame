@@ -18,7 +18,12 @@ $(document).ready(function(){
         .mousemove(handleMouseEvent);
 
     function handleMouseEvent ( mouseEvent ) {
-        return handlePositionChange( mouseEvent.clientX, mouseEvent.clientY )
+        var x = mouseEvent.clientX,
+            y = mouseEvent.clientY
+
+        socket.emit('moveSend', { top: y, left: x })
+
+        return handlePositionChange( x, y )
     }
 
     function handlePositionChange ( x, y ) {
@@ -33,11 +38,6 @@ $(document).ready(function(){
 
             top: y - scaled / 2, // center on mouse
             left: x - scaled / 2
-        })
-
-        socket.emit('moveSend', {
-            top: parseInt( player.css('top') ),
-            left: parseInt( player.css('left') )
         })
     }
 
