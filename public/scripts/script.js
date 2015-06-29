@@ -1,14 +1,39 @@
 var socket = io.connect()
 
-$(document).ready(function(){
+var colors = [
+    '#FF8508',
+    '#BB53A2',
+    '#38B0C4',
+    '#6493A8',
+    '#6C5A80',
+    '#351725',
+    '#1592CC'
+]
+
+var players = []
+
+var actor = function ( color ) {
+    return $('<span>')
+                .addClass('actor')
+                .css('background', color)
+}
+var color = function () {
+    return colors[ Math.floor( Math.random() * colors.length ) ]
+}
+
+$(document).ready(function() {
 
     socket.on('moveGet', function(message) {
         console.log('moveGet', message)
-        handlePositionChange( message.left, message.top )
+        handlePositionChange(message.user, message.left, message.top)
     })
 
-    var target = $('<span>').addClass('target actor'),
-        player = $('<span>').addClass('player actor')
+    socket.on('joinResult', function(message) {
+
+    })
+
+    var player = actor(color()), // self/player
+        target = actor(color())
 
     $('body')
         .append(target)
@@ -17,21 +42,26 @@ $(document).ready(function(){
     $('html')
         .mousemove(handleMouseEvent);
 
-    function handleMouseEvent ( mouseEvent ) {
+    function handleMouseEvent(mouseEvent) {
+
         var x = mouseEvent.clientX,
             y = mouseEvent.clientY
 
-        socket.emit('moveSend', { top: y, left: x })
+        // todo how to throttle
+        socket.emit('moveSend', {
+            top: y,
+            left: x
+        })
 
-        return handlePositionChange( x, y )
+        return handlePositionChange(x, y)
     }
 
-    function handlePositionChange ( x, y ) {
+    function handlePositionChange(x, y) {
 
-        var d = elementDistance( target, player ),
-            scaled = scale( d )
+        var d = elementDistance(target, player),
+            scaled = scale(d)
 
-        player.css({
+        return player.css({
             width: scaled,
             height: scaled,
             'border-radius': scaled,
@@ -41,28 +71,30 @@ $(document).ready(function(){
         })
     }
 
-    function elementDistance ( elem1, elem2 ) {
+    function elementDistance(elem1, elem2) {
         var px = elem1.css('top'),
             py = elem1.css('left'),
             bx = elem2.css('top'),
             by = elem2.css('left');
 
-        return distance( px, py, bx, by )
+        return distance(px, py, bx, by)
     }
 
-    function distance ( px, py, bx, by ) {
+    function distance(px, py, bx, by) {
         px = norm(px)
         py = norm(py)
         bx = norm(bx)
         by = norm(by)
 
         // console.log( 'px, py, bx, by:', px, py, bx, by );
-        return Math.floor( Math.sqrt( Math.pow(px - bx, 2) + Math.pow(py - by, 2) ) )
+        return Math.floor(Math.sqrt(Math.pow(px - bx, 2) + Math.pow(py - by, 2)))
 
-        function norm ( v ) { return parseInt(v) }
+        function norm(v) {
+            return parseInt(v)
+        }
     }
 
-    function scale ( v ) {
+    function scale(v) {
         return 1.0 * v
     }
 })
