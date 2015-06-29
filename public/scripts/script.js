@@ -2,9 +2,9 @@ var socket = io.connect()
 
 $(document).ready(function(){
 
-    socket.on('message', function(message) {
-        console.log('message', message)
-        handleMouseEvent( message.left, message.top )
+    socket.on('moveGet', function(message) {
+        console.log('moveGet', message)
+        handlePositionChange( message.left, message.top )
     })
 
     var target = $('<span>').addClass('target actor'),
@@ -29,14 +29,14 @@ $(document).ready(function(){
                 left: event.pageX - scaled / 2
             })
 
-            socket.emit('message', {
+            socket.emit('moveSend', {
                 top: parseInt( player.css('top') ),
                 left: parseInt( player.css('left') )
             })
         });
 
     function handleMouseEvent ( mouseEvent ) {
-        return handlePositionChange( event.pageX, event.pageY )
+        return handlePositionChange( event.clientX, event.clientY )
     }
 
     function handlePositionChange ( x, y ) {
@@ -49,8 +49,8 @@ $(document).ready(function(){
             height: scaled,
             'border-radius': scaled,
 
-            top: event.pageY - scaled / 2, // center on mouse
-            left: event.pageX - scaled / 2
+            top: y - scaled / 2, // center on mouse
+            left: x - scaled / 2
         })
 
         socket.emit('message', {
