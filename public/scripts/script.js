@@ -15,28 +15,10 @@ $(document).ready(function(){
         .append(player)
 
     $('html')
-        .mousemove(function( event ) {
-
-            var d = elementDistance( target, player ),
-                scaled = scale( d )
-
-            player.css({
-                width: scaled,
-                height: scaled,
-                'border-radius': scaled,
-
-                top: event.pageY - scaled / 2, // center on mouse
-                left: event.pageX - scaled / 2
-            })
-
-            socket.emit('moveSend', {
-                top: parseInt( player.css('top') ),
-                left: parseInt( player.css('left') )
-            })
-        });
+        .mousemove(handleMouseEvent);
 
     function handleMouseEvent ( mouseEvent ) {
-        return handlePositionChange( event.clientX, event.clientY )
+        return handlePositionChange( mouseEvent.clientX, mouseEvent.clientY )
     }
 
     function handlePositionChange ( x, y ) {
@@ -53,7 +35,7 @@ $(document).ready(function(){
             left: x - scaled / 2
         })
 
-        socket.emit('message', {
+        socket.emit('moveSend', {
             top: parseInt( player.css('top') ),
             left: parseInt( player.css('left') )
         })
