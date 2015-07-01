@@ -1,46 +1,58 @@
+/*
+- player
+    - not necessarily ip unique, could allow multiple windows
+    - 
+*/
+
 var socket = io.connect()
 
 var colors = [
-    '#FF8508',
-    '#BB53A2',
+    '#1592CC',
+    '#351725',
     '#38B0C4',
     '#6493A8',
     '#6C5A80',
-    '#351725',
-    '#1592CC'
+    '#BB53A2',
+    '#FF8508'
 ]
 
-var players = []
+var players = {}
 
-var actor = function ( color ) {
-    return $('<span>')
-                .addClass('actor')
-                .css('background', color)
+var actor = function(color) {
+    return makeActor(color)
+
+    function makeActor(color) {
+        return $('<span>')
+            .addClass('actor')
+            .css('background', color)
+    }
 }
-var color = function () {
-    return colors[ Math.floor( Math.random() * colors.length ) ]
+var color = function() {
+    return colors[Math.floor(Math.random() * colors.length)]
 }
 
 $(document).ready(function() {
+    var $body = $('body'),
+        $html = $('html')
 
     socket.on('moveGet', function(message) {
-        console.log('moveGet', message)
-        handlePositionChange(message.user, message.left, message.top)
+        // console.log('moveGet', message)
+        handlePositionChange(message.left, message.top, message.id)
     })
 
     socket.on('joinResult', function(message) {
-
+        var player = actor(color())
+        player.id = message.id
+        $body.append(player)
+        players[message.id] = player
+        console.log('joinResult',message)
+        if (!players.self)
+            players.self = player
     })
 
-    var player = actor(color()), // self/player
-        target = actor(color())
+    socket.emit('join', { newRoom: 'home' })
 
-    $('body')
-        .append(target)
-        .append(player)
-
-    $('html')
-        .mousemove(handleMouseEvent);
+    $html.mousemove(handleMouseEvent);
 
     function handleMouseEvent(mouseEvent) {
 
@@ -50,24 +62,29 @@ $(document).ready(function() {
         // todo how to throttle
         socket.emit('moveSend', {
             top: y,
-            left: x
+            left: x,
+            id: players.self && players.self.id
         })
 
         return handlePositionChange(x, y)
     }
 
-    function handlePositionChange(x, y) {
+    function handlePositionChange(x, y, id) {
 
-        var d = elementDistance(target, player),
-            scaled = scale(d)
+        var player = players[id] || players.self
+        // var d = elementDistance(target, player),
+            // scaled = scale(d)
 
-        return player.css({
-            width: scaled,
-            height: scaled,
-            'border-radius': scaled,
+        // console.log('handle x y id', x, y, id)
+        return player && player.css({
+            // width: 50,
+            // height: 50,
+            // 'border-radius': scaled,
 
-            top: y - scaled / 2, // center on mouse
-            left: x - scaled / 2
+            // top: y - scaled / 2, // center on mouse
+            // left: x - scaled / 2
+            top: y - 25,
+            left: x - 25
         })
     }
 
