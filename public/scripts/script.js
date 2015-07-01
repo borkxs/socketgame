@@ -40,15 +40,25 @@ $(document).ready(function() {
         handlePositionChange(message.left, message.top, message.id)
     })
 
-    socket.on('joinResult', function(message) {
-        var player = actor(color())
-        player.id = message.id
-        $body.append(player)
-        players[message.id] = player
-        console.log('joinResult',message)
-        if (!players.self)
-            players.self = player
+
+    socket.on('selfJoin', function(message) {
+        join(message.id, true)
     })
+
+    socket.on('otherJoin', function(message) {
+        join(message.id)
+    })
+
+    function join(id, self){
+        console.log('join id self',id,self)
+        var player = actor(color())
+        player.id = id
+        $body.append(player)
+        players[id] = player
+        if (self)
+            players.self = player
+        return player
+    }
 
     socket.emit('join', { newRoom: 'home' })
 
