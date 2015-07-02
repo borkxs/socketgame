@@ -38,7 +38,6 @@ $(document).ready(function() {
 
     socket.on('moveGet', function(message) {
         console.log('moveGet', message)
-
         handlePositionChange(message.left, message.top, message.id)
     })
 
@@ -63,9 +62,20 @@ $(document).ready(function() {
     //     return player
     // }
 
-    socket.emit('join', { newRoom: 'home' })
+    socket.emit('join', {
+        newRoom: 'home'
+    })
 
     $html.mousemove(handleMouseEvent);
+
+    document.ontouchmove = function (e) {
+        e.preventDefault()
+
+        var touch
+        touch = e.changedTouches[0]
+        socket.emit('moveSend', { top: touch.clientY, left: touch.clientX, id: selfId })
+        handlePositionChange( touch.clientX, touch.clientY, selfId )
+    }
 
     function handleMouseEvent(mouseEvent) {
 
@@ -84,31 +94,23 @@ $(document).ready(function() {
 
     function handlePositionChange(x, y, id) {
 
+        // console.log('handle x y id', x, y, id)
+        return playerById(id).css({
+            top: y - 25,
+            left: x - 25
+        })
+    }
+
+    function playerById(id) {
         var player = players[id]
-        if (!player)
-            {
+        if (!player) {
             player = players[id] = actor(color())
             player.id = id
             $body.append(player)
             if (player.id == selfId)
                 players.self = player
-            }
-
-        // var player = players[id] || players.self
-        // var d = elementDistance(target, player),
-            // scaled = scale(d)
-
-        // console.log('handle x y id', x, y, id)
-        return player && player.css({
-            // width: 50,
-            // height: 50,
-            // 'border-radius': scaled,
-
-            // top: y - scaled / 2, // center on mouse
-            // left: x - scaled / 2
-            top: y - 25,
-            left: x - 25
-        })
+        }
+        return player
     }
 
     function elementDistance(elem1, elem2) {
