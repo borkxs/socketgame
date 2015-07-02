@@ -33,32 +33,35 @@ var color = function() {
 
 $(document).ready(function() {
     var $body = $('body'),
-        $html = $('html')
+        $html = $('html'),
+        selfId
 
     socket.on('moveGet', function(message) {
-        // console.log('moveGet', message)
+        console.log('moveGet', message)
+
         handlePositionChange(message.left, message.top, message.id)
     })
 
 
     socket.on('selfJoin', function(message) {
-        join(message.id, true)
+        // join(message.id, true)
+        selfId = message.id
     })
 
-    socket.on('otherJoin', function(message) {
-        join(message.id)
-    })
+    // socket.on('otherJoin', function(message) {
+    //     join(message.id)
+    // })
 
-    function join(id, self){
-        console.log('join id self',id,self)
-        var player = actor(color())
-        player.id = id
-        $body.append(player)
-        players[id] = player
-        if (self)
-            players.self = player
-        return player
-    }
+    // function join(id, self){
+    //     console.log('join id self',id,self)
+    //     var player = actor(color())
+    //     player.id = id
+    //     $body.append(player)
+    //     players[id] = player
+    //     if (self)
+    //         players.self = player
+    //     return player
+    // }
 
     socket.emit('join', { newRoom: 'home' })
 
@@ -73,7 +76,7 @@ $(document).ready(function() {
         socket.emit('moveSend', {
             top: y,
             left: x,
-            id: players.self && players.self.id
+            id: selfId
         })
 
         return handlePositionChange(x, y)
@@ -81,7 +84,17 @@ $(document).ready(function() {
 
     function handlePositionChange(x, y, id) {
 
-        var player = players[id] || players.self
+        var player = players[id]
+        if (!player)
+            {
+            player = players[id] = actor(color())
+            player.id = id
+            $body.append(player)
+            if (player.id == selfId)
+                players.self = player
+            }
+
+        // var player = players[id] || players.self
         // var d = elementDistance(target, player),
             // scaled = scale(d)
 
