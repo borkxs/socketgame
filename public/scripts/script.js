@@ -51,7 +51,8 @@ var buffer = (function() {
 
 $(document).ready(function() {
     var $body = $('body'),
-        $html = $('html')
+        $html = $('html'),
+        selfId
 
     socket.on('moveGet', function(message) {
         // console.log('moveGet', message)
@@ -68,29 +69,39 @@ $(document).ready(function() {
     })
 
     socket.on('selfJoin', function(message) {
-        join(message.id, true)
+        // join(message.id, true)
+        selfId = message.id
     })
 
-    socket.on('otherJoin', function(message) {
-        join(message.id)
-    })
+    // socket.on('otherJoin', function(message) {
+    //     join(message.id)
+    // })
 
-    function join(id, self) {
-        // console.log('join id self', id, self)
-        var player = actor(id, color())
-        
-        players[id] = player
-        if (self) players.self = player
-
-        $body.append(player)
-        return player
-    }
+    // function join(id, self){
+    //     console.log('join id self',id,self)
+    //     var player = actor(color())
+    //     player.id = id
+    //     $body.append(player)
+    //     players[id] = player
+    //     if (self)
+    //         players.self = player
+    //     return player
+    // }
 
     socket.emit('join', {
         newRoom: 'home'
     })
 
     $html.mousemove(handleMouseEvent);
+
+    document.ontouchmove = function (e) {
+        e.preventDefault()
+
+        var touch
+        touch = e.changedTouches[0]
+        socket.emit('moveSend', { top: touch.clientY, left: touch.clientX, id: selfId })
+        handlePositionChange( touch.clientX, touch.clientY, selfId )
+    }
 
     function handleMouseEvent(mouseEvent) {
 
@@ -101,7 +112,7 @@ $(document).ready(function() {
         socket.emit('moveSend', {
             top: y,
             left: x,
-            id: players.self && players.self.id
+            id: selfId
         })
 
         return handlePositionChange(x, y)
@@ -109,21 +120,22 @@ $(document).ready(function() {
 
     function handlePositionChange(x, y, id) {
 
-        var player = players[id] || players.self
-            // var d = elementDistance(target, player),
-            // scaled = scale(d)
-
-        // console.log('handle x y id', x, y, id)
-        return player && player.css({
-            // width: 50,
-            // height: 50,
-            // 'border-radius': scaled,
-
-            // top: y - scaled / 2, // center on mouse
-            // left: x - scaled / 2
+        return playerById(id).css({
             top: y - 25,
             left: x - 25
         })
+    }
+
+    function playerById(id) {
+        var player = players[id]
+        if (!player) {
+            player = players[id] = actor(color())
+            player.id = id
+            $body.append(player)
+            if (player.id == selfId)
+                players.self = player
+        }
+        return player
     }
 
     function elementDistance(elem1, elem2) {
