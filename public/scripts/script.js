@@ -1,165 +1,110 @@
-/*
-- player
-    - not necessarily ip unique, could allow multiple windows
-    - 
-*/
-
-var socket = io.connect()
-
-var colors = [
-    '#1592CC',
-    '#351725',
-    '#38B0C4',
-    '#6493A8',
-    '#6C5A80',
-    '#BB53A2',
-    '#FF8508'
-]
-
-var players = {}
-
-var actor = function(id, color) {
-    return makeActor(color)
-
-    function makeActor(color) {
-        var inst = $('<span>')
-                     .addClass('actor')
-                     .css('background', color)
-        inst.id = id
-        return inst
-    }
-}
-var color = function() {
-    return colors[Math.floor(Math.random() * colors.length)]
-}
-
-var buffer = (function() {
-
-    var myBuffer = []
-
-    function buffer_interface(cb) {
-        myBuffer.push(cb)
-    }
-    buffer_interface.shift = function() {
-        return myBuffer.shift.apply(myBuffer, arguments)
-    }
-    buffer_interface.len = function() {
-        return myBuffer.length
-    }
-    return buffer_interface
-}())
-
 $(document).ready(function() {
-    var $body = $('body'),
-        $html = $('html')
 
-    socket.on('moveGet', function(message) {
-        // console.log('moveGet', message)
-        // handlePositionChange(message.left, message.top, message.id)
-        buffer(function() {
-            handlePositionChange(message.left, message.top, message.id)
-        })
-    })
+    var socket = io.connect(),
 
+        players = {},
+
+        actor = function(id, color) {
+            return makeActor(color)
+
+            function makeActor(color) {
+                var inst = $('<span>')
+                    .addClass('actor')
+                    .css('background', color)
+                inst.id = id
+                return inst
+            }
+        },
+
+        color = (function() {
+            var colors = [
+                '#1592CC',
+                '#351725',
+                '#38B0C4',
+                '#6493A8',
+                '#6C5A80',
+                '#BB53A2',
+                '#FF8508'
+            ]
+            return function get_color() {
+                return colors[Math.floor(Math.random() * colors.length)]
+            }
+        }()),
+
+        buffer = (function() {
+
+            var buff = [ /* id: [] */ ]
+
+            function buf_inst(id, cb) {
+                var idBuff = buff[id] = buff[id] || []
+                idBuff.push(cb)
+            }
+            buf_inst.shave = function() {
+                Object.keys(buff).map(function(id) {
+                    var f = buff[id].shift()
+                    if ( f && typeof f == 'function' )
+                        f()
+                })
+            }
+            return buf_inst
+        }())
+
+
+    //////////
     requestAnimationFrame(function frame(timestamp) {
-        if (buffer.len())
-            buffer.shift()()
+        buffer.shave()
         requestAnimationFrame(frame);
     })
-
+    socket.on('moveGet', function(message) {
+        buffer(message.id, function() {
+            move(message.id, message.left, message.top)
+        })
+    })
     socket.on('selfJoin', function(message) {
-        join(message.id, true)
+        selfId = message.id
     })
-
-    socket.on('otherJoin', function(message) {
-        join(message.id)
-    })
-
-    function join(id, self) {
-        // console.log('join id self', id, self)
-        var player = actor(id, color())
-        
-        players[id] = player
-        if (self) players.self = player
-
-        $body.append(player)
-        return player
-    }
-
     socket.emit('join', {
         newRoom: 'home'
     })
+    $('html').mousemove(mouse)
+    document.ontouchmove = touch
+    ///////////
 
-    $html.mousemove(handleMouseEvent);
 
-    function handleMouseEvent(mouseEvent) {
-
-        var x = mouseEvent.clientX,
-            y = mouseEvent.clientY
-
-        // todo how to throttle
-        socket.emit('moveSend', {
-            top: y,
-            left: x,
-            id: players.self && players.self.id
-        })
-
-        return handlePositionChange(x, y)
+    function touch (event) {
+        event.preventDefault()
+        mouse(event.changedTouches[0])
     }
-
-    function handlePositionChange(x, y, id) {
-
-        var player = players[id] || players.self
-            // var d = elementDistance(target, player),
-            // scaled = scale(d)
-
-        // console.log('handle x y id', x, y, id)
-        return player && player.css({
-            // width: 50,
-            // height: 50,
-            // 'border-radius': scaled,
-
-            // top: y - scaled / 2, // center on mouse
-            // left: x - scaled / 2
+    function mouse (event) {
+        return change(selfId, event.clientX, event.clientY)
+    }
+    function change (id, x, y){
+        send(id, x, y)
+        move(id, x, y)
+    }
+    function send(id, x, y){
+        socket.emit('moveSend', {
+            id: id,
+            top: x,
+            left: y
+        })
+    }
+    function move(id, x, y){
+        player(id).css({
             top: y - 25,
             left: x - 25
         })
     }
-
-    function elementDistance(elem1, elem2) {
-        var px = elem1.css('top'),
-            py = elem1.css('left'),
-            bx = elem2.css('top'),
-            by = elem2.css('left');
-
-        return distance(px, py, bx, by)
-    }
-
-    function distance(px, py, bx, by) {
-        px = norm(px)
-        py = norm(py)
-        bx = norm(bx)
-        by = norm(by)
-
-        // console.log( 'px, py, bx, by:', px, py, bx, by );
-        return Math.floor(Math.sqrt(Math.pow(px - bx, 2) + Math.pow(py - by, 2)))
-
-        function norm(v) {
-            return parseInt(v)
+    function player(id) {
+        // console.log('player(id)', id)
+        var player = players[id]
+        if (!player) {
+            player = players[id] = actor(id,color())
+            player.id = id
+            $('body').append(player)
+            if (player.id == selfId)
+                players.self = player
         }
-    }
-
-    function two_norm () {
-        return _n_norm(2)
-    }
-
-    function _n_norm (n) {
-        return function () {
-
-        }
-    }
-
-    function scale(v) {
-        return 1.0 * v
+        return player
     }
 })
