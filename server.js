@@ -28,9 +28,9 @@ chatServer.listen(server)
 function serveStatic(response, cache, absPath) {
     var fileInCache = cache[absPath]
 
-    /*if (fileInCache)
+    if (fileInCache)
         sendFile(response, absPath, fileInCache)
-    else*/
+    else
         fs.exists(absPath, function(exists) {
             if (exists)
                 fs.readFile(absPath, function(err, data) {
