@@ -18,18 +18,36 @@ var colors = [
 
 var players = {}
 
-var actor = function(color) {
+var actor = function(id, color) {
     return makeActor(color)
 
     function makeActor(color) {
-        return $('<span>')
-            .addClass('actor')
-            .css('background', color)
+        var inst = $('<span>')
+                     .addClass('actor')
+                     .css('background', color)
+        inst.id = id
+        return inst
     }
 }
 var color = function() {
     return colors[Math.floor(Math.random() * colors.length)]
 }
+
+var buffer = (function() {
+
+    var myBuffer = []
+
+    function buffer_interface(cb) {
+        myBuffer.push(cb)
+    }
+    buffer_interface.shift = function() {
+        return myBuffer.shift.apply(myBuffer, arguments)
+    }
+    buffer_interface.len = function() {
+        return myBuffer.length
+    }
+    return buffer_interface
+}())
 
 $(document).ready(function() {
     var $body = $('body'),
@@ -37,9 +55,17 @@ $(document).ready(function() {
 
     socket.on('moveGet', function(message) {
         // console.log('moveGet', message)
-        handlePositionChange(message.left, message.top, message.id)
+        // handlePositionChange(message.left, message.top, message.id)
+        buffer(function() {
+            handlePositionChange(message.left, message.top, message.id)
+        })
     })
 
+    requestAnimationFrame(function frame(timestamp) {
+        if (buffer.len())
+            buffer.shift()()
+        requestAnimationFrame(frame);
+    })
 
     socket.on('selfJoin', function(message) {
         join(message.id, true)
@@ -49,18 +75,20 @@ $(document).ready(function() {
         join(message.id)
     })
 
-    function join(id, self){
-        console.log('join id self',id,self)
-        var player = actor(color())
-        player.id = id
-        $body.append(player)
+    function join(id, self) {
+        // console.log('join id self', id, self)
+        var player = actor(id, color())
+        
         players[id] = player
-        if (self)
-            players.self = player
+        if (self) players.self = player
+
+        $body.append(player)
         return player
     }
 
-    socket.emit('join', { newRoom: 'home' })
+    socket.emit('join', {
+        newRoom: 'home'
+    })
 
     $html.mousemove(handleMouseEvent);
 
@@ -82,7 +110,7 @@ $(document).ready(function() {
     function handlePositionChange(x, y, id) {
 
         var player = players[id] || players.self
-        // var d = elementDistance(target, player),
+            // var d = elementDistance(target, player),
             // scaled = scale(d)
 
         // console.log('handle x y id', x, y, id)
@@ -118,6 +146,16 @@ $(document).ready(function() {
 
         function norm(v) {
             return parseInt(v)
+        }
+    }
+
+    function two_norm () {
+        return _n_norm(2)
+    }
+
+    function _n_norm (n) {
+        return function () {
+
         }
     }
 
