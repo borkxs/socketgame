@@ -16,6 +16,8 @@ $(document).ready(function() {
             }
         },
 
+        selfId = undefined,
+
         color = (function() {
             var colors = [
                 '#1592CC',
