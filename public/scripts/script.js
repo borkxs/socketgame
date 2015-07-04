@@ -53,7 +53,7 @@ $(document).ready(function() {
     //////////
     requestAnimationFrame(function frame(timestamp) {
         buffer.shave()
-        requestAnimationFrame(frame);
+        requestAnimationFrame(frame)
     })
     socket.on('moveGet', function(message) {
         buffer(message.id, function() {
@@ -70,7 +70,6 @@ $(document).ready(function() {
     document.ontouchmove = touch
     ///////////
 
-
     function touch (event) {
         event.preventDefault()
         mouse(event.changedTouches[0])
@@ -85,8 +84,8 @@ $(document).ready(function() {
     function send(id, x, y){
         socket.emit('moveSend', {
             id: id,
-            top: x,
-            left: y
+            top: y,
+            left: x
         })
     }
     function move(id, x, y){
