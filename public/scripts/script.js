@@ -1,3 +1,5 @@
+require('../styles/style.css')
+
 $(document).ready(function() {
 
     var socket = io.connect(),
@@ -58,6 +60,7 @@ $(document).ready(function() {
         requestAnimationFrame(frame)
     })
     socket.on('moveGet', function(message) {
+        // console.log('moveGet', message)
         buffer(message.id, function() {
             move(message.id, message.left, message.top)
         })
@@ -87,7 +90,8 @@ $(document).ready(function() {
         socket.emit('moveSend', {
             id: id,
             top: y,
-            left: x
+            left: x,
+            time: Date.now()
         })
     }
     function move(id, x, y){
